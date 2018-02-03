@@ -1,0 +1,217 @@
+# arturo_ideas.txt
+################################################################################
+
+# (1) Sending a parameter via THIS environment
+LC_BP_QUICKSTART=1 ssh -o SendEnv="LC_BP_QUICKSTART" do_mango
+
+# (2) scp a param-file, then run the script
+
+
+# Say I want to vary 3 parameters
+# ... The runs are UNIvariate
+# ... So the param-enumerates are additive, not multiplicative
+# 1: 10 -- 1,2,3,4,5,6,7,8,9,10
+# 2: 5 -- 0, 1, 5, 10, 20
+# 3: 5 -- 0.1, 0.2, 0.3, 0.4, 0.5
+
+# * declare what the output will be named
+# * The pickles SHOULD be self-describing
+# * OR, use digital-ocean's "startscript" thing
+
+# DEV-PATH:
+# 1. get a python file to just print out the value if it is different
+# 2. the pickling of the paramization -- can you produce & parse the pickles correctly
+# ... ie handle according to the METADATA, maybe of a dict
+# 3. get some graphing-coordination
+# 4. need a function which takes a default value, or an environment value if defined
+# ... sys.env()?
+# 5. get a "dry-run" arg capability, to verify number of jobs, param-sets, etc.
+
+# To wrap a script into tmux:
+# (so a long-running script's progress can be monitored)
+# - if the command isn't bash, the session will end immediately after
+# - so, wrap it in bash, and then it will be monitor-able
+
+# ALT:
+#!/bin/bash
+# -d == dont attach
+# -s == session_name
+# LAST == shell-command to RUN
+tmux new-session -s SCRIPT bash -c 'python -c "
+import time
+for x in range(10):
+    time.sleep(1)
+    print(x,
+     \"seconds\")
+"
+'
+################################################################################
+################################################################################
+
+# ALT:
+# The problem with this, is that bash is started _non-interactively_, due to the -c option
+# ... to get around this, use an "init-file"
+tmux new-session -s SCRIPT 'bash --init-file <(echo "python -c \"
+import time
+for x in range(10):
+    time.sleep(1)
+    print(x)
+\"
+"
+)
+'
+# must double-quote, because otherwise the proc-sub will happen for tmux, not bash
+
+# ALT:
+# Or, try to initialize with "$SHELL"
+tmux new-session -s SCRIPT bash -c 'python -c "
+import time
+for x in range(10):
+    time.sleep(1)
+    print(x,
+     \"seconds\")
+";$SHELL
+'
+
+# ALT:
+# DONT close dead-panes
+tmux set-option remain-on-exit on
+# .... is WINDOW-specific, so you must target the window
+# Clean up after...
+tmux respawn-window (doesn't really work)
+
+# ALT:
+# Send keys of what the command to run, are.
+tmux new-session -d -s SCRIPT_SESSION (just bash, probably)
+tmux send-keys -t SCRIPT_SESSION
+# ...
+# tmux start-server  
+# ^ not necessary; tmux new-session will do so by default, if not already started
+tmux new-session -d -s SESSION_NAME
+# tmux new-window -t SESSION_NAME:1  
+# ^ not necessary; auto-created of index-1
+tmux send-keys -t SESSION_NAME:1 "python -c 'import time; time.sleep(20)'" Enter
+
+# * ;bash -i 
+# ... is equivalent to:
+# ;$SHELL
+
+
+# CONSIDERATIONS:
+# - send-keys will run it in the same environment you're calibrating in the login env
+# - $SHELL-construct will get you a fresh-shell
+
+
+# Examples:
+ssh do_mango 'tmux new-session -d -s SESH'
+# ^ This will still start a bash sesion, and in fact, you can attach to it
+ssh -t do_mango 'tmux attach-session -t SESH'
+# ^ This could be used to get people to easily share a terminal
+# ... no need to ssh-in, and then get the right tmux-session
+ssh do_mango 'bash -c "tmux new-session -d -s SESH"'
+
+################################################################################
+# Psuedocode:
+# ssh > bash > tmux > bash > python
+ssh do_mango 'TMUX_INIT'
+
+TMUX_INIT=
+tmux new-session -d -s SCRIPT_SESSION;
+tmux send-keys -t SCRIPT_SESSION 'CMD_SCRIPT'
+# (bash is already running)
+CMD_SCRIPT=
+python INTERP_STRING
+# will either be a script, or a cmd
+# ... probably a SCRIPT
+INTERP_STRING=
+"script.py"
+################################################################################
+################################################################################
+################################################################################
+
+POSSIBLE NAMES:
+    muxjob -- but will it get ssh-completion?
+
+OPTS:
+    --script-local) first scp's the script-name to the remote, then proceeds
+    --script-remote) just tries to ssh-in, assumes script is already there
+    --bash) [modify cmd_script] // [will just "source" the script, or assume it is executable
+    --python) [modify cmd_script]
+    --cmdline)
+    --attach) attaches after the tmux-wrapper is created
+        -a)
+    --environment(?)
+    ----> maybe something to print-environment, transfer it, and source it before executing it
+    *----> ... or an environment file to execute before executing the CMD_WRAPPED
+    ---> This is probably how the multi-node parameterization is going to go
+    --host) declare which host
+    -h) 
+    ---> completion will use ssh's host-completion IF it is
+    .... this can be found by getting the fxn for which ssh is bound by "builtin:complete"
+################################################################################
+HOST="do_mango"
+SESSION_NAME="SCRIPT_SESSION"
+
+# Switches:
+is_py
+is_bash
+is_cmdline
+to_attach_after
+to_transfer_local_script
+
+
+# Default:
+if ( $is_py ); then
+    CMD_WRAPPED="
+    python 
+    "
+elif  ( $is_bash ); then
+    CMD_WRAPPED=
+
+elif ( $is_cmdline )
+
+fi
+#####################
+# Handle if the script needs to be copied local->remote
+if ( $to_transfer_local_script ); then
+    scp $HOST
+
+fi
+
+#####################
+TMUX_INIT="
+    tmux new-session -d -s $SESSION_NAME;
+    tmux send-keys -t \"$CMD_WRAPPED\"
+"
+ssh $HOST "$TMUX_INIT"
+
+
+#####################
+# Attach to script
+# Force allocation since this is a non-i script
+ATTACH_CMD="ssh -t $HOST \"tmux attach -t $SESSION_NAME\""
+# ssh -t $HOST "tmux attach -t $SESSION_NAME"
+
+if ( $to_attach_after ); then
+    $ATTACH_CMD    # ^ detach to close-out
+fi
+
+# Write general alias to bash_profile if doesn't exist
+if grep -q arturo_attach; then
+    echo "Alias aready present; use 'arturo_attach' to attach to the server running your cmd."
+else
+    echo "Creating alias: 'arturo_attach'"
+    xALIAS='alias arturo_attach="source ~/.arturo_attach"
+    echo "$xALIAS" >> ~/.bash_profile
+fi
+
+
+# Write specific ATTACH cmd
+rm ~/.arturo_attach
+echo "$ATTACH_CMD" > ~/.arturo_attach
+
+
+
+################################################################################
+# CONSIDERATIONS:
+# - the host must have its environment configured for this

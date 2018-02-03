@@ -1,0 +1,66 @@
+1. made a ubuntu machine
+2. installed doctl agent with a client (for email/slack-notifs)
+3. snap, the linux-universal pack-man, for installing doctl
+4. some weird ncurses thing upon update/upgraden
+
+
+PROBLEMS:
+
+_ df-local
+_ tmux copy-paste
+_ vimmin' and pastin'
+- programmatically adding ssh-key, getting token, etc.
+- get high-cpu availability
+- create a biggie of a server...
+- ansible script to config python/conda stuff
+- hello-world of ansible
+- apt-get some packages, like bc, and also updating
+"what are the first things... when on a new server"
+- not working in root on arturo, and other servers
+- disabling visual keys for ssh
+
+
+TO IMPLEMENT:
+- private networking: ctl option, and also a tutorial for after the fact:
+https://www.digitalocean.com/community/tutorials/how-to-enable-digitalocean-private-networking-on-existing-droplets
+https://www.digitalocean.com/community/tutorials/how-to-use-doctl-the-official-digitalocean-command-line-client
+> doctl compute droplet-action power-off <DO_ID>
+> doctl compute droplet-action enable-private-networking <DO_ID>
+> doctl compute droplet-action power-on <DO_ID>
+> vim /etc/default/grub.d/50-cloudimg-settings.cfg
+GRUB_CMDLINE_LINUX_DEFAULT="console=tty1 console=ttyS0 net.ifnames=0"
+(add net.ifnames=0)
+> sudo update-grub
+> sudo reboot
+... (now ubuntu-specific)
+> vim /etc/network/interfaces
+iface eth1 inet static
+    address [Private_IP_from_settings]
+    netmask [Private_netmask_from_settings]
+iface eth1 inet static
+    address 10.136.xx.xx
+    netmask 255.255.0.0
+> shutdown -r now
+Check stuff...
+> ifconfig -a
+
+
+- very restrictive FIREWALLS
+
+# FIREWALL:
+sudo ufw enable
+sudo ufw allow OpenSSH
+# ... diagnostics of:
+sudo ufw status
+sudo ufw app list
+
+
+# Disconnect from internet 
+https://www.digitalocean.com/community/questions/can-i-create-a-droplet-with-no-public-ip
+1. one-off: 
+> ifdown eth0
+2. permanently
+comment out...
+/etc/network/interfaces:[eth0]
+3. block it, instead of disable it:
+iptables or ufw firewall, to drop public-ip-traffic

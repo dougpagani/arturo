@@ -1,0 +1,51 @@
+Arturo:
+
+Techs:
+################################################################################
+- vagrant
+- ansible
+- zookeeper
+- hbase
+- supervisord
+
+Terms:
+################################################################################
+
+
+Goals/Facilities:
+################################################################################
+
+1. create
+2. provision, with monitoring process (supervisord?)
+3. run script
+(upon script end)
+4. notify via mail-server the person who ran it
+5. send data via email, and dump it in a git-repo with the data-generated
+(inotify to catch new-files to be collated & stored/sent)
+6. kill-server automatically
+
+Ideas-so-far:
+################################################################################
+- "bless" users via github pub-keys
+- single command like `arturo-run pyscript.d`
+- flag for parallel or not
+--> auto-kill if heavily under-utilized cpu's, or if runs-over
+- arturo-config:
+~/.arturo has:
+_ name
+_ email (to-be-notified)
+_ key
+_ ?
+
+
+################################################################################
+#!/bin/bash
+
+apt-get update
+apt-get install -y transmission-cli screen
+screen -d -m transmission-cli -w /root/downloads -b -u 0 -p 12312 '...'
+ # mail it
+
+
+ sqs -- a queue, kubernates
+polling
