@@ -13,6 +13,10 @@
 #   9. Run algo...
 
 ################################################################################
+# TODO: "remember" this directory's location, per-site (ie per person's laptop)
+# ....  - could use a dot-hidden file in the homedir, print pwd to it
+
+
 # If this directory isn't a git-directory, it isn't being run from the right directory
 [ -d .git ] || echo "ERROR: gotta GIT into the right directory; not in the top-level of the repo"; return
 
@@ -56,7 +60,7 @@ fi
 
 mkdir -p ./DOWNLOADS/minute
 mv ./DOWNLOADS/csv_data.zip ./DOWNLOADS/minute/csv_data.zip
-unzip ./DOWNLOADS/minute/csv_data.zip
+unzip ./DOWNLOADS/minute/csv_data.zip #TODO: check where it unzips "to"
 
 ################################################################################
 # DOCKER, zipline build
@@ -65,7 +69,7 @@ unzip ./DOWNLOADS/minute/csv_data.zip
 # Get the patched ZIPLINE fork (for minute data)
 git clone https://github.com/lukevs/zipline ./DOWNLOADS/luke-zipline
 #> Starbucks Wifi: 50, 5, 3
-time -p docker build -t quantopian/zipline ./DOWNLOADS/luke-zipline
+time -p docker build -t luke/zipline ./DOWNLOADS/luke-zipline
 #> with cache: 716, 0.9, 0.8
 # But did it work? ___ 
 # TO REMOVE: 
@@ -75,12 +79,65 @@ if false; then
 fi
 #> without cache:
 
+# Named "zippy" to distinguish between the CONTAINER, from the image, repo, project
+echo "RUNNING CONTAINER from the Just-Built Image"
+#
+docker run \
+    --name zippy \
+    -it luke/zipline
+\
+    -v ~/.zipline:/root/.zipline \
+    -v ./DOWNLOADS/minute:/csv_data
 
-## STILL TO TEST:
+# INGEST the data
+echo "INGESTING the data for CSV-bundle"
+docker exec -it zippy \
+    zipline ingest -b csv-bundle
+
+# Stop the container
+docker stop -it zippy
+# Re-start it with an instance of JUPYTER NOTEBOOKS
+docker start -it zippy \
+    -p 8888:8888/tcp
+# OR, if that doesnt work 
+# (bc you cant add a port-forwarding rule to an pre-existing container)
+docker stop -it zippy \
+    && docker rm zippy \
+    && \
+docker run \
+    --name zippy \
+    -it luke/zipline
+\
+    -v ~/.zipline:/root/.zipline \
+    -v ./DOWNLOADS/minute:/csv_data
+    -p 8888:8888/tcp
+
+# TODO: Jupyter will now be running, and might forcibly hang the script, as it does
+# ... to an interactive terminal.
+
+# Open the port automatically, for jupyter
+open -a "Google Chrome" "http://localhost:8888/tree"
+
+
+
+
+################################################################################
 return 1
+################################################################################
+## STILL TO TEST, REFINE:
+################################################################################
 
-docker run -v ~/cinco:/projects -v ~/.zipline:/root/.zipline -v ~/minute:/csv_data -p 8888:8888/tcp --name zipline -it quantopian/zipline
-docker exec -it zipline zipline ingest -b csv-bundle
+docker run \
+    -v ~/cinco:/projects \
+    -v ~/.zipline:/root/.zipline \
+    -v ~/minute:/csv_data \
+    -p 8888:8888/tcp \
+    --name zipline \
+    -it quantopian/zipline
+
+docker exec -it zipline \
+    zipline ingest -b csv-bundle
+
 wget -O convert_csv.py 'https://gist.githubusercontent.com/m0006/8024963ec1402343b1fafb83c4a8b9df/raw/283c031576c6b0f811d145a4a652fc6cf472f3d6/convert_csv.py'
 ################################################################################
 ################################################################################
