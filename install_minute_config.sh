@@ -77,6 +77,7 @@ fi
 
 
 ## STILL TO TEST:
+return 1
 
 docker run -v ~/cinco:/projects -v ~/.zipline:/root/.zipline -v ~/minute:/csv_data -p 8888:8888/tcp --name zipline -it quantopian/zipline
 docker exec -it zipline zipline ingest -b csv-bundle
