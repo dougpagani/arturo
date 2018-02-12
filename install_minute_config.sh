@@ -83,11 +83,13 @@ fi
 echo "RUNNING CONTAINER from the Just-Built Image"
 #
 docker run \
-    --name zippy \
-    -it luke/zipline
+    -v $(pwd)/DOWNLOADS/minute:/csv_data\
 \
-    -v ~/.zipline:/root/.zipline \
-    -v ./DOWNLOADS/minute:/csv_data
+    --name zippy \
+    -it luke/zipline 
+
+# Example of clean invoke:
+docker run -v $(pwd)/:/projects -v ~/.zipline:/root/.zipline --name rgv -it quantopian/zipline
 
 # INGEST the data
 echo "INGESTING the data for CSV-bundle"
