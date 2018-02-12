@@ -1,0 +1,32 @@
+# Setting up Zipline and Docker
+
+1. Create a directory for your CSV data. In it, create a directory called `minute`
+
+2. Clone Luke's fork of zipline: https://github.com/lukevs/zipline
+
+3. Build a docker image from it with: `docker build -t quantopian/zipline .`
+
+4. At ~/.zipline/extension.py, put this: https://gist.github.com/lukevs/a16f94b42ff693b8b79243f62e67f1ed
+
+5. In extension.py, set the date bounds of the csv data.  Use 2008-1-1 and 2018-latest-latest if that is your range
+
+6. To start the container and link your local directories appropriately, run `docker run -v your_algo_directory:/projects -v ~/.zipline:/root/.zipline -v your_csv_directory:/csv_data -p 8888:8888/tcp --name zipline -it quantopian/zipline` 
+
+
+# Ingesting Data
+
+Note: data download is ~7GB unpacked to ~30GB.  It may be easier to make a custom selection of dates (2015-12-1 - 2016-1-31) from the zip and do this process on that subset of data.  Otherwise these steps can take up to a day.  Also, we are not uploading the data to a server.  It is easier to just pull the historical data and keep it local for our purposes. 
+
+1. Use my API key to download all csv minute data since 2008 using this link: https://www.quandl.com/api/v3/databases/AS500/download?api_key=WPHzKypy1W5rCCmLYQ7X&download_type=all-data
+
+2. Once you have downloaded the zip of the data, unpack it anywhere
+
+3. Download and run this gist, https://gist.github.com/m0006/8024963ec1402343b1fafb83c4a8b9df pathing the unpacked zip and your output directory in the script.  The gist has an option to delete the daily files after they are sorted, which I would recommend for space.  This script takes a long time to run for the entire dataset.  Run with 'python convert_csv.py'
+
+4. Once the gist has run, you will have ~30 GB of csvs.  Make sure you have another ~8GB of storage to ingest, else it will fail.
+
+5. Ingest the data with 'docker exec -it zipline zipline ingest -b csv-bundle'      
+
+6. Once the data is ingested download this gist to your project dir: https://gist.github.com/m0006/2ba9ec5092c68202188b94d9058e6081
+
+7. Run it with 'docker exec -it zipline python /projects/ingest_test.py' you should see the last five minutes of data for each stock print out
