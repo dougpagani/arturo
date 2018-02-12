@@ -22,8 +22,9 @@
 
 # IF script not-present, download it
 [ -r ./install/extension.py ] ||
-    curl "https://gist.githubusercontent.com/lukevs/a16f94b42ff693b8b79243f62e67f1ed/raw/6d8e02bb3c8a98c2edd70f82693441f645bceba8/extension.py" > install/extension.py
-mv ./install/extension.py ~/.zipline/extension.py
+    curl "https://gist.githubusercontent.com/lukevs/a16f94b42ff693b8b79243f62e67f1ed/raw/6d8e02bb3c8a98c2edd70f82693441f645bceba8/extension.py" > ./install/extension.py
+
+cp ./install/extension.py ~/.zipline/extension.py
 
 # QUANDL data
 if [ -r ./DOWNLOADS/csv_data.zip ]; then
@@ -52,7 +53,7 @@ else
     esac
 fi
 
-[[ -r "$data_dir"  ]] || echo "data_dir not set correctly"; return 1
+[[ -r "$data_path"  ]] || echo "data_dir not set correctly"; return 1
 
 ################################################################################
 # Finish the script
@@ -60,7 +61,7 @@ fi
 
 mkdir -p ./DOWNLOADS/minute
 mv ./DOWNLOADS/csv_data.zip ./DOWNLOADS/minute/csv_data.zip
-unzip ./DOWNLOADS/minute/csv_data.zip #TODO: check where it unzips "to"
+unzip ./DOWNLOADS/minute/csv_data.zip -d ./DOWNLOADS/minute/ 
 
 ################################################################################
 # DOCKER, zipline build
@@ -86,14 +87,14 @@ docker run \
     -v $(pwd)/DOWNLOADS/minute:/csv_data\
 \
     --name zippy \
-    -it luke/zipline 
-
+    luke/zipline & 
 # Example of clean invoke:
-docker run -v $(pwd)/:/projects -v ~/.zipline:/root/.zipline --name rgv -it quantopian/zipline
+if false; then
+    docker run -v $(pwd)/:/projects -v ~/.zipline:/root/.zipline --name rgv -it quantopian/zipline
 
 # INGEST the data
 echo "INGESTING the data for CSV-bundle"
-docker exec -it zippy \
+docker exec zippy \
     zipline ingest -b csv-bundle
 
 # Stop the container
@@ -113,6 +114,7 @@ docker run \
     -v ~/.zipline:/root/.zipline \
     -v ./DOWNLOADS/minute:/csv_data
     -p 8888:8888/tcp
+fi
 
 # TODO: Jupyter will now be running, and might forcibly hang the script, as it does
 # ... to an interactive terminal.
@@ -163,8 +165,38 @@ ssh-keygen -lf ${1-~/.ssh/id_rsa.pub} -E md5 | sed 's/.*MD5://' | sed 's/ .*//'
 
 cat ~/.ssh/id_rsa.pub | pbcopy
 
+DATASERVER_IP=198.211.108.237 # arturo
 # Store things on a shared drive, then...
 # /opt/share ...
 bless_user() {
+    # OPTS:
+        # -k PUBKEYCAT
+        # -f PUBKEYPLACE
+        # -n GITHUB_NAME
+        # -l LOGIN_NAME
+        # ... : ${LOGIN_NAME:-$(\id -un)}
+        # -r ... just auth for root
+        # -s $DATASERVER_IP
+        # TODO: grab the ip, automatically, in providing a domain-name
+        # ... maybe parsed from ssh -G
+################################################################################
+# VAR-PREP:
+################################################################################
 
+    DATASERVER_IP=198.211.108.237 # arturo
+    KEYDATA="$1"
+
+    # if -f
+    if [[ $IS_FILE = 1 ]]; then
+        KEYDATA=$(cat "$KEYPLACE")
+    fi
+
+################################################################################
+    # IF -r
+    echo "$KEYDATA" | ssh root@${DATASERVER_IP} 'umask 0077; mkdir -p .ssh; cat >> $HOME/.ssh/authorized_keys && cat "$HOME/.ssh/authorized_keys"'
+
+    # ELSE
+    # useradd, first, then ssh in as root, or as a sudo'd user, and cat-keys
+
+################################################################################
 }
