@@ -1,0 +1,25 @@
+# GITIGNORE FILE
+
+# vim swp files
+*.swp
+*.swo
+*.swn
+
+# vim temp-files
+# caveat: backups are made with this ending, quite often
+*~
+.DS_STORE
+
+# Current session's full-script loaded-in
+current_script.txt
+
+# ignore the system-specific-logs, but keep the folder
+logs/*
+!logs/.gitkeep
+
+# No need to store things you can DL off the web
+DOWNLOADS/*
+!DOWNLOADS/.gitkeep
+
+# Bakup in the event of risky, uncertain operations, but dont want to shwo
+*.bak
