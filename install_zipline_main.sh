@@ -65,11 +65,13 @@ docker build -t quantopian/zipline .
 # ... I'll just work-off my own account for now, though, until it's needed
 
 cd "$OLDPWD"
+./docker_run.sh quantopian/zipline q_zippy
 
-echo "Mounting $(PWD) directory"
-docker run \
-    -v $(PWD):/projects \
-    -v ~/.zipline-quantopian:/root/.zipline
-    -p 8888:8888
-    --name zippy
-    -it quantopian/zipline
+# An example of the CMD produced above:
+#
+# docker run \
+#     -v ${PWD}:/projects \
+#     -v ~/.zipline-quantopian:/root/.zipline
+#     -p 8888:8888
+#     --name zippy
+#     -it quantopian/zipline
