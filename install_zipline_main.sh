@@ -32,7 +32,7 @@ ZIPDIRNAME=quantopian-zipline
 cd DOWNLOADS
 if ! [[ -d $ZIPDIRNAME ]]; then
     mkdir $ZIPDIRNAME
-    git clone https://github.com/quantopian/zipline $ZIPDIRNAME
+    git clone https://github.com/dougpagani/zipline $ZIPDIRNAME
 fi
 cd $ZIPDIRNAME
 # Dockerfile aspects:
