@@ -18,7 +18,7 @@
 
 
 # If this directory isn't a git-directory, it isn't being run from the right directory
-[ -d .git ] || echo "ERROR: gotta GIT into the right directory; not in the top-level of the repo"; return
+[ -d .git ] || { echo "ERROR: gotta GIT into the right directory; not in the top-level of the repo"; exit 1; }
 
 # IF script not-present, download it
 [ -r ./install/extension.py ] ||
@@ -31,9 +31,9 @@ if [ -r ./DOWNLOADS/csv_data.zip ]; then
     data_path=./DOWNLOADS/csv_data.zip
     GTG=1
 else
-    read -p "Do you already have the Quandl data downloaded, somewhere on your computer? [y/n]"
+    read -p "Do you already have the Quandl data downloaded, somewhere on your computer? [y/n]" choice
     case "$choice" in 
-      y|Y ) 
+      [yY]* ) 
             echo "OK, perfect, what is the path to the zip-data?"
             read -e -p "PATH-TO-ZIP: " data_path
             if [[ -r "$data_path" ]]; then
@@ -41,26 +41,26 @@ else
                 GTG=1
             else 
                 echo "ERROR: NO SUCH ZIP-FILE"
-                return 1
+                exit 1
             fi;;
-      n|N ) 
+      [nN]* ) 
             echo "Estimate by dividing the total size, 8GB, by the rate"
             echo "(e.g. 4MB/s for NEUs connection =~ 30m)."
             read -p "Continue?" choice2;;
       * ) 
           echo "ERROR: invalid response; run this again"
-          return 1;;
+          exit 1;;
     esac
 fi
 
-[[ -r "$data_path"  ]] || echo "data_dir not set correctly"; return 1
+[[ -r "$data_path"  ]] || { echo "data_dir not set correctly"; exit 1; }
 
 ################################################################################
 # Finish the script
 ################################################################################
 
 mkdir -p ./DOWNLOADS/minute
-mv ./DOWNLOADS/csv_data.zip ./DOWNLOADS/minute/csv_data.zip
+mv "$data_path" ./DOWNLOADS/minute/csv_data.zip
 unzip ./DOWNLOADS/minute/csv_data.zip -d ./DOWNLOADS/minute/ 
 
 ################################################################################
@@ -126,7 +126,7 @@ open -a "Google Chrome" "http://localhost:8888/tree"
 
 
 ################################################################################
-return 1
+exit 1
 ################################################################################
 ## STILL TO TEST, REFINE:
 ################################################################################
@@ -145,7 +145,7 @@ docker exec -it zipline \
 wget -O convert_csv.py 'https://gist.githubusercontent.com/m0006/8024963ec1402343b1fafb83c4a8b9df/raw/283c031576c6b0f811d145a4a652fc6cf472f3d6/convert_csv.py'
 ################################################################################
 ################################################################################
-return 0
+exit 0
 ################################################################################
 
 getghpubkey malachyburke 2>/dev/null | ssh-keygen -lf - -E md5 
