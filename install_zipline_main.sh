@@ -27,12 +27,14 @@ PS4='$LINENO: '
 # https://stackoverflow.com/questions/10743026/how-to-display-last-command-that-failed-when-using-bash-set-e
 # }}}
 ################################################################################
-OLDPWD="${PWD}"
+ORIG_PWD="${PWD}"
 ZIPDIRNAME=quantopian-zipline
 cd DOWNLOADS
-mkdir $ZIPDIRNAME
-git clone https://github.com/quantopian/zipline $ZIPDIRNAME
-cd zipline
+if ! [[ -d $ZIPDIRNAME ]]; then
+    mkdir $ZIPDIRNAME
+    git clone https://github.com/quantopian/zipline $ZIPDIRNAME
+fi
+cd $ZIPDIRNAME
 # Dockerfile aspects:
 # - FROM python:3.5
 # - ENV tini -- to change TINI_VERSION, and have it impact the build-cache
@@ -64,7 +66,8 @@ docker build -t quantopian/zipline .
 # could just do 'docker pull midas/zipline' if we had an account
 # ... I'll just work-off my own account for now, though, until it's needed
 
-cd "$OLDPWD"
+cd "$ORIG_PWD"
+echo ${PWD}
 ./docker_run.sh quantopian/zipline q_zippy
 
 # An example of the CMD produced above:
