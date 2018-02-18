@@ -11,7 +11,7 @@ echo 'source activate zipper' >> ~/.bash_profile
 conda update conda --yes
 
 conda-env remove -n zipper --yes 2> /dev/null
-conda create -n zipper -f env.yml
+conda env create -n zipper -f env.yml
 # env.yml generated with:
 #   $ source activate zipper && conda env export > ./env.yml 
 
