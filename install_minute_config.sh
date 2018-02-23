@@ -16,6 +16,7 @@
 # TODO: "remember" this directory's location, per-site (ie per person's laptop)
 # ....  - could use a dot-hidden file in the homedir, print pwd to it
 
+# TODO: ~/.zipline directory for extension.py
 
 # If this directory isn't a git-directory, it isn't being run from the right directory
 [ -d .git ] || { echo "ERROR: gotta GIT into the right directory; not in the top-level of the repo"; exit 1; }
@@ -27,8 +28,8 @@
 cp ./install/extension.py ~/.zipline/extension.py
 
 # QUANDL data
-if [ -r ./DOWNLOADS/csv_data.zip ]; then
-    data_path=./DOWNLOADS/csv_data.zip
+if [ -r ./DOWNLOADS/minute/csv_data.zip ]; then
+    data_path=./DOWNLOADS/minute/csv_data.zip
     GTG=1
 else
     read -p "Do you already have the Quandl data downloaded, somewhere on your computer? [y/n]" choice
@@ -51,22 +52,28 @@ else
           echo "ERROR: invalid response; run this again"
           exit 1;;
     esac
-fi
 
 [[ -r "$data_path"  ]] || { echo "data_dir not set correctly"; exit 1; }
+mkdir -p ./DOWNLOADS/minute
+mv "$data_path" ./DOWNLOADS/minute/csv_data.zip
+
+fi
+
 
 ################################################################################
 # Finish the script
 ################################################################################
 
-mkdir -p ./DOWNLOADS/minute
-mv "$data_path" ./DOWNLOADS/minute/csv_data.zip
+echo "Unzipping files"
 unzip ./DOWNLOADS/minute/csv_data.zip -d ./DOWNLOADS/minute/ 
+# Will still prompt for CSV's
 
 ################################################################################
 # DOCKER, zipline build
 ################################################################################
 
+exit 9
+################################################################################
 # Get the patched ZIPLINE fork (for minute data)
 git clone https://github.com/lukevs/zipline ./DOWNLOADS/luke-zipline
 #> Starbucks Wifi: 50, 5, 3
