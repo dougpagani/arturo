@@ -25,7 +25,12 @@
 [ -r ./install/extension.py ] ||
     curl "https://gist.githubusercontent.com/lukevs/a16f94b42ff693b8b79243f62e67f1ed/raw/6d8e02bb3c8a98c2edd70f82693441f645bceba8/extension.py" > ./install/extension.py
 
-cp ./install/extension.py ~/.zipline/extension.py
+[ -r ./install/convert_csv.py ] ||
+    wget -O ./install/convert_csv.py 'https://gist.githubusercontent.com/m0006/8024963ec1402343b1fafb83c4a8b9df/raw/283c031576c6b0f811d145a4a652fc6cf472f3d6/convert_csv.py'
+
+
+ln ./install/extension.py ~/.zipline/extension.py
+ln ./install/extension.py ~/.zipline/extension.py
 
 # QUANDL data
 if [ -r ./DOWNLOADS/minute/csv_data.zip ]; then
@@ -71,57 +76,55 @@ unzip ./DOWNLOADS/minute/csv_data.zip -d ./DOWNLOADS/minute/
 ################################################################################
 # DOCKER, zipline build
 ################################################################################
+ZIP_REPO=dougpagani/zipline
+#ZIP_REPO=lukevs/zipline
 
-exit 9
+ZIP_DIR_NAME=$(printf "$ZIP_REPO" | tr '/' '-')
+ZIP_DIR_PLACE="./DOWNLOADS/$ZIP_DIR_NAME"
+
+DOCKER_IMAGE_NAME=$ZIP_REPO         # x/zipline
+DOCKER_CONTAINER_NAME=$ZIP_DIR_NAME # x-zipline
+
 ################################################################################
 # Get the patched ZIPLINE fork (for minute data)
-git clone https://github.com/lukevs/zipline ./DOWNLOADS/luke-zipline
+git clone https://github.com/${ZIP_REPO} $ZIP_DIR_PLACE
 #> Starbucks Wifi: 50, 5, 3
-time -p docker build -t luke/zipline ./DOWNLOADS/luke-zipline
+
+# Build the Dockerfile
+time docker build -t luke/zipline $ZIP_DIR_PLACE
+# TODO: -p only works for macOS
 #> with cache: 716, 0.9, 0.8
 # But did it work? ___ 
-# TO REMOVE: 
+#> without cache:
+
+# TO REMOVE PREVIOUS docker-containers & images: 
 if false; then
     docker stop $(docker ps -aq) && docker rm $(docker ps -aq); # Running containers, first
     docker rmi --force $(docker images --all -q); # Built images, last
 fi
-#> without cache:
 
 # Named "zippy" to distinguish between the CONTAINER, from the image, repo, project
 echo "RUNNING CONTAINER from the Just-Built Image"
-#
-docker run \
-    -v $(pwd)/DOWNLOADS/minute:/csv_data\
-\
-    --name zippy \
-    luke/zipline & 
-# Example of clean invoke:
-if false; then
-    docker run -v $(pwd)/:/projects -v ~/.zipline:/root/.zipline --name rgv -it quantopian/zipline
 
-# INGEST the data
-echo "INGESTING the data for CSV-bundle"
-docker exec zippy \
+
+# Start the container, get the SSL-auth, background the container
+# TODO: change .zipline to a build-specific directory
+docker run \
+    -v $(pwd)/DOWNLOADS:/csv_data\
+    -v $HOME/.zipline:/root/.zipline
+    -v $HOME/projects:/projects
+\
+    --name $DOCKER_CONTAINER_NAME \
+    $DOCKER_IMAGE_NAME & 
+
+# Ingest the data
+docker exec $DOCKER_CONTAINER_NAME \
     zipline ingest -b csv-bundle
 
-# Stop the container
-docker stop -it zippy
-# Re-start it with an instance of JUPYTER NOTEBOOKS
-docker start -it zippy \
-    -p 8888:8888/tcp
-# OR, if that doesnt work 
-# (bc you cant add a port-forwarding rule to an pre-existing container)
-docker stop -it zippy \
-    && docker rm zippy \
-    && \
-docker run \
-    --name zippy \
-    -it luke/zipline
-\
-    -v ~/.zipline:/root/.zipline \
-    -v ./DOWNLOADS/minute:/csv_data
-    -p 8888:8888/tcp
-fi
+################################################################################
+exit 9
+################################################################################
+
 
 # TODO: Jupyter will now be running, and might forcibly hang the script, as it does
 # ... to an interactive terminal.
@@ -134,6 +137,13 @@ open -a "Google Chrome" "http://localhost:8888/tree"
 
 ################################################################################
 exit 1
+# TODO: date-range of extension.py -- --full opt or not
+# TODO: hard-link the files, dont copy (so you dont mistakenly edit one & not other)
+# TODO: change location of csv-dump // unzip
+# TODO: change location of zip file dump
+# TODO: run convert_csv.py
+# TODO: fix hard-pathing for python file (could do sys-arg)
+# TODO: make the optional removal a flag in the python script
 ################################################################################
 ## STILL TO TEST, REFINE:
 ################################################################################
@@ -146,13 +156,17 @@ docker run \
     --name zipline \
     -it quantopian/zipline
 
+################################################################################
+exit 0
+################################################################################
+
+# Execute the script to convert the CSVs
+python ./install/convert_csv.py
+
+# Now INGEST
 docker exec -it zipline \
     zipline ingest -b csv-bundle
 
-wget -O convert_csv.py 'https://gist.githubusercontent.com/m0006/8024963ec1402343b1fafb83c4a8b9df/raw/283c031576c6b0f811d145a4a652fc6cf472f3d6/convert_csv.py'
-################################################################################
-################################################################################
-exit 0
 ################################################################################
 
 getghpubkey malachyburke 2>/dev/null | ssh-keygen -lf - -E md5 
@@ -207,3 +221,32 @@ bless_user() {
 
 ################################################################################
 }
+################################################################################
+
+# Example of clean invoke:
+if false; then
+    docker run -v $(pwd)/:/projects -v ~/.zipline:/root/.zipline --name rgv -it quantopian/zipline
+
+    # INGEST the data
+    echo "INGESTING the data for CSV-bundle"
+    docker exec zippy \
+        zipline ingest -b csv-bundle
+
+    # Stop the container
+    docker stop -it zippy
+    # Re-start it with an instance of JUPYTER NOTEBOOKS
+    docker start -it zippy \
+        -p 8888:8888/tcp
+    # OR, if that doesnt work 
+    # (bc you cant add a port-forwarding rule to an pre-existing container)
+    docker stop -it zippy \
+        && docker rm zippy \
+        && \
+    docker run \
+        --name zippy \
+        -it luke/zipline
+    \
+        -v ~/.zipline:/root/.zipline \
+        -v ./DOWNLOADS/minute:/csv_data
+        -p 8888:8888/tcp
+fi
