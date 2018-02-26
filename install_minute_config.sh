@@ -168,59 +168,6 @@ docker exec -it zipline \
     zipline ingest -b csv-bundle
 
 ################################################################################
-
-getghpubkey malachyburke 2>/dev/null | ssh-keygen -lf - -E md5 
-
-198.211.108.237 -- arturo
-
-: ${UN:=root}
-
-cd DOWNLOADS
-rsync -Paz -e 'ssh -p 22' $UN@198.211.108.237:/root/minute/csv_data.zip ./
-# rsync -Paz -e 'ssh -p 22' root@198.211.108.237:/root/minute/csv_data.zip ./
-cd -
-
-ssh-keygen -t rsa -b 4096 -C 'MJB default key, new laptop' -f ~/.ssh/id_rsa
-
-ssh-keygen -lf ${1-~/.ssh/id_rsa.pub} -E md5 | sed 's/.*MD5://' | sed 's/ .*//'
-
-cat ~/.ssh/id_rsa.pub | pbcopy
-
-DATASERVER_IP=198.211.108.237 # arturo
-# Store things on a shared drive, then...
-# /opt/share ...
-bless_user() {
-    # OPTS:
-        # -k PUBKEYCAT
-        # -f PUBKEYPLACE
-        # -n GITHUB_NAME
-        # -l LOGIN_NAME
-        # ... : ${LOGIN_NAME:-$(\id -un)}
-        # -r ... just auth for root
-        # -s $DATASERVER_IP
-        # TODO: grab the ip, automatically, in providing a domain-name
-        # ... maybe parsed from ssh -G
-################################################################################
-# VAR-PREP:
-################################################################################
-
-    DATASERVER_IP=198.211.108.237 # arturo
-    KEYDATA="$1"
-
-    # if -f
-    if [[ $IS_FILE = 1 ]]; then
-        KEYDATA=$(cat "$KEYPLACE")
-    fi
-
-################################################################################
-    # IF -r
-    echo "$KEYDATA" | ssh root@${DATASERVER_IP} 'umask 0077; mkdir -p .ssh; cat >> $HOME/.ssh/authorized_keys && cat "$HOME/.ssh/authorized_keys"'
-
-    # ELSE
-    # useradd, first, then ssh in as root, or as a sudo'd user, and cat-keys
-
-################################################################################
-}
 ################################################################################
 
 # Example of clean invoke:
