@@ -3,8 +3,19 @@ import sys
 import os
 from datetime import time
 
-ORIGINAL_CSV_PATH = '/root/arturo/DOWNLOADS/quandl-csvs/'
-OUTPUT_PATH = '/root/arturo/DOWNLOADS/minute/'
+# TODO: convert to an arg-ready python-script (with flag -d|--directory <CSV-DIR>)
+# From quandl (organized by DATE)
+ORIGINAL_CSV_PATH = '/root/arturo/DOWNLOADS/csv_data/quandl-csvs/'
+# For zipline INGEST -b csv-bundle (organized by TICKER)
+OUTPUT_PATH = '/root/arturo/DOWNLOADS/csv_data/minute/'
+# time for 2008 --> 2017
+# 41Gi used
+# 18Gi avail
+# ...
+# 31,000 seconds ~ 9 hours, for 9 years
+# : 1-hr / yr
+# 37G used
+# 22G avail
 
 
 def open_csv(data_file):

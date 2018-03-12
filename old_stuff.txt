@@ -1,0 +1,15 @@
+ Indicators: (of cache-y-ness)
+ OLD: X
+ OLD: Y
+ OLD: Z
+ NEW: A
+ NEW: .zipline
+ [...]
+
+- which docker-cache-step
+- old image?
+- old container?
+- old github repo?
+- old .zipline dir?
+- old extension.py?
+- old .... ?
